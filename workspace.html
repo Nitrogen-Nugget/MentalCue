@@ -1,0 +1,621 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Build a script and rehearse it with MentalCue.">
+        <title>MentalCue | Script rehearsal</title>
+        <link rel="icon" type="image/png" href="media/MentalCuenotext.png">
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+        <style>
+            :root { color-scheme: light; --paper:#fff; --white:#fff; --ink:#541078; --muted:#766780; --line:#e8d8f0; --purple:#9c0ee8; --purple-deep:#7c0eb8; --lime:#00ffff; --cyan:#00ffff; --mono:'Inter',sans-serif; --sans:'Inter',sans-serif; }
+            * { box-sizing:border-box; }
+            body { margin:0; color:var(--ink); background:var(--paper); font-family:var(--sans); }
+            button, input, textarea, select { font:inherit; }
+            button { cursor:pointer; }
+            nav { box-shadow:0 8px 8px #8888; }
+            .page { width:min(1200px,100%); margin:0 auto; padding:44px 28px 76px; }
+            .eyebrow { color:var(--purple); font:11px var(--mono); letter-spacing:.08em; text-transform:uppercase; }
+            .page-title { margin:12px 0 8px; color:var(--purple); font-size:60px; line-height:1.06; font-weight:500; }
+            .page-intro { max-width:650px; margin:0; color:var(--muted); font-size:15px; line-height:1.7; }
+            .setup-grid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(280px,.8fr); gap:20px; align-items:start; margin-top:34px; }
+            .panel { min-width:0; padding:24px; background:var(--white); border:1px solid var(--line); border-radius:20px; box-shadow:0 8px 16px #9c0ee822; }
+            .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+            .panel-heading h2 { margin:0; font-size:17px; font-weight:800; }
+            .step { color:var(--muted); font:10px var(--mono); text-transform:uppercase; }
+            .source-tabs { display:flex; gap:4px; padding:4px; background:#f8effd; border-radius:50px; width:max-content; max-width:100%; margin-bottom:18px; }
+            .source-tab { min-height:38px; padding:0 14px; border:0; border-radius:50px; color:#60616a; background:transparent; font-size:12px; font-weight:800; }
+            .source-tab[aria-selected="true"] { color:#fff; background:var(--purple); }
+            .field-label { display:block; margin-bottom:8px; color:#555763; font:10px var(--mono); letter-spacing:.04em; text-transform:uppercase; }
+            .script-input { display:block; width:100%; min-height:154px; resize:vertical; padding:14px; border:1px solid var(--line); border-radius:14px; outline:0; color:var(--ink); background:#fff; font-size:14px; line-height:1.65; box-shadow:0 4px 10px #9c0ee822; }
+            .script-input:focus, .line-text:focus, .role-name:focus, select:focus { border-color:var(--purple); outline:2px solid #9c0ee820; }
+            .source-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
+            .microcopy { margin:0; color:var(--muted); font-size:11px; line-height:1.5; }
+            .button { min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:0 16px; border:1px solid transparent; border-radius:50px; color:#fff; background:var(--purple); font-size:12px; font-weight:800; white-space:nowrap; }
+            .button:hover { background:var(--purple-deep); }
+            .button:disabled { cursor:wait; opacity:.55; }
+            .button-secondary { color:var(--ink); background:#fff; border-color:var(--line); }
+            .button-secondary:hover { color:var(--purple); background:#f6f2f8; border-color:var(--purple); }
+            .button-quiet { min-height:34px; padding:0 10px; color:var(--purple); background:transparent; border-color:#d9c8e5; }
+            .upload-zone { display:grid; min-height:154px; place-content:center; padding:20px; border:1px dashed #bd8fd2; border-radius:16px; background:#fcf8ff; text-align:center; }
+            .upload-zone strong { font-size:14px; }
+            .upload-zone p { margin:6px 0 14px; color:var(--muted); font-size:12px; }
+            .upload-zone input { max-width:100%; margin:auto; color:var(--muted); font-size:11px; }
+            .upload-zone input::file-selector-button { margin-right:10px; padding:9px 12px; border:0; border-radius:50px; color:#fff; background:var(--purple); font:700 11px var(--sans); cursor:pointer; }
+            .image-list { display:grid; gap:6px; margin-top:10px; color:var(--muted); font-size:11px; }
+            .image-list:empty { display:none; }
+            .editor-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:26px 0 10px; }
+            .editor-head h3 { margin:0; font-size:13px; }
+            .line-count { color:var(--muted); font:10px var(--mono); }
+            .line-list { display:grid; gap:7px; }
+            .empty-lines { padding:18px 14px; border:1px solid var(--line); color:var(--muted); background:#fbfbf9; font-size:12px; }
+            .line-row { display:grid; grid-template-columns:30px minmax(0,1fr) minmax(120px,155px) 34px; align-items:center; gap:8px; }
+            .line-number { color:#9899a1; text-align:center; font:10px var(--mono); }
+            .line-text, .role-select, .role-name, .voice-select, .mic-select { min-width:0; width:100%; min-height:38px; padding:8px 10px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:#fff; font-size:12px; box-shadow:0 4px 10px #9c0ee822; }
+            .line-text { font-size:13px; }
+            .remove-line { width:34px; height:34px; border:0; color:#777984; background:transparent; font-size:19px; }
+            .remove-line:hover { color:#a9264d; background:#fbf0f2; }
+            .role-list { display:grid; gap:0; }
+            .role-row { padding:15px 0; border-top:1px solid var(--line); }
+            .role-row:first-child { padding-top:0; border-top:0; }
+            .role-top { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:8px; }
+            .role-name { font-weight:800; }
+            .role-choice { display:flex; align-items:center; gap:6px; color:#555763; font-size:10px; white-space:nowrap; }
+            .role-choice input { accent-color:var(--purple); }
+            .role-delete { width:28px; height:28px; border:0; color:#777984; background:transparent; font-size:17px; }
+            .voice-label { display:block; margin:10px 0 6px; color:var(--muted); font:9px var(--mono); text-transform:uppercase; }
+            .role-actions { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; }
+            .mic-block { margin-top:26px; padding-top:20px; border-top:1px solid var(--line); }
+            .mic-select { margin:8px 0; }
+            .mic-note { min-height:32px; color:var(--muted); font-size:10px; line-height:1.5; }
+            .permission-button { min-height:32px; padding:0 10px; font-size:10px; }
+            .start-row { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:20px; padding-top:18px; border-top:1px solid var(--line); }
+            .setup-status { min-height:18px; color:#9b3150; font-size:11px; }
+            .start-button { min-width:180px; min-height:48px; font-size:13px; }
+            .rehearsal { position:fixed; inset:0; z-index:5; overflow:auto; color:#fff; background:var(--purple); }
+            .rehearsal[hidden] { display:none; }
+            .rehearsal-top { width:min(1040px,100%); min-height:76px; display:flex; align-items:center; justify-content:space-between; gap:16px; margin:auto; padding:14px 26px; border-bottom:1px solid #ffffff2a; }
+            .rehearsal-brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:800; }
+            .rehearsal-brand img { width:32px; height:32px; object-fit:contain; filter:brightness(0) invert(1); }
+            .rehearsal-top button { color:#fff; background:transparent; border-color:#ffffff55; }
+            .rehearsal-top button:hover { background:#ffffff18; }
+            .rehearsal-main { width:min(850px,100%); margin:0 auto; padding:38px 26px 42px; }
+            .session-meta { display:flex; align-items:center; justify-content:space-between; gap:12px; color:#f1d7ff; font:10px var(--mono); letter-spacing:.05em; text-transform:uppercase; }
+            .session-meta strong { color:var(--lime); font-weight:500; }
+            .session-title { margin:10px 0 24px; font-size:30px; line-height:1.2; }
+            .script-view { display:grid; gap:6px; }
+            .script-line { display:grid; grid-template-columns:minmax(85px,140px) minmax(0,1fr); gap:18px; padding:14px 16px; border-left:3px solid transparent; border-radius:14px; color:#fff; background:#7c0eb8; transition:background .2s,border-color .2s; }
+            .script-line.active { border-left-color:var(--lime); color:#fff; background:#7c0eb8; }
+            .script-line.done { color:#ead8f4; }
+            .script-line.mine .speaker { color:var(--cyan); }
+            .speaker { font:10px var(--mono); text-transform:uppercase; overflow-wrap:anywhere; }
+            .line-copy { font-size:15px; line-height:1.55; overflow-wrap:anywhere; }
+            .hide-own-lines .script-line.mine .line-copy { visibility:hidden; }
+            .live-panel { margin-top:20px; padding:16px; border:1px solid #ffffff80; border-radius:16px; background:#7c0eb8; }
+            .live-label { display:flex; justify-content:space-between; gap:12px; color:#f1d7ff; font:10px var(--mono); text-transform:uppercase; }
+            .live-text { min-height:26px; margin-top:9px; color:#fff; font-size:14px; line-height:1.5; }
+            .live-text.placeholder { color:#ac9bb9; }
+            .session-controls { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin-top:18px; }
+            .session-controls .button { min-height:42px; }
+            .session-controls .button-primary { color:var(--purple-deep); background:var(--lime); }
+            .session-controls .button-primary:hover { background:#e8ffa0; }
+            .session-controls .button-secondary { color:#fff; background:transparent; border-color:#ffffff55; }
+            .session-controls .button-secondary:hover { background:#ffffff18; }
+            .session-note { margin:12px 0 0; color:#f1d7ff; font-size:10px; line-height:1.5; }
+            @media (max-width:800px) { .setup-grid { grid-template-columns:1fr; } .page { padding-top:34px; } }
+            @media (max-width:700px) { nav { height:86px; } nav #logo { width:15%; min-width:58px; } nav ul { gap:2px; } nav ul li a { padding:8px 4px; font-size:12px; } }
+            @media (max-width:560px) { .page { padding:28px 16px 48px; } .page-title { font-size:36px; } .panel { padding:18px; } .line-row { grid-template-columns:24px minmax(0,1fr) 34px; } .line-row .role-select { grid-column:2; grid-row:2; } .line-row .remove-line { grid-column:3; grid-row:1 / span 2; } .role-top { grid-template-columns:minmax(0,1fr) auto; } .role-delete { grid-column:2; grid-row:1; } .role-choice { grid-column:1 / span 2; grid-row:2; } .start-row { align-items:stretch; flex-direction:column; } .start-button { width:100%; } .rehearsal-top { padding:12px 16px; } .rehearsal-main { padding:26px 16px 34px; } .session-title { font-size:25px; } .script-line { grid-template-columns:76px minmax(0,1fr); gap:10px; padding:12px 10px; } .line-copy { font-size:13px; } }
+        </style>
+    </head>
+    <body>
+        <nav aria-label="Main navigation">
+            <div id="logo"><a href="index.html"><img src="media/mentalcuenav.png" alt="MentalCue logo"></a></div>
+            <ul>
+                <li><a href="workspace.html" aria-current="page">Workspace</a></li>
+                <li><a href="about.html">About Us</a></li>
+                <li><a href="guide.html">Guide</a></li>
+            </ul>
+        </nav>
+        <main class="page" id="workspaceApp">
+            <h1 class="page-title"><span style="color: #9c0ee8;">Make the Script</span><span class="ai"> yours.</span></h1>
+            <p class="page-intro">Add lines or bring in script pages. Assign every line, choose your part, then rehearse at your own pace.</p>
+
+            <div class="setup-grid" id="setupView">
+                <section class="panel" aria-labelledby="scriptHeading">
+                    <div class="panel-heading"><h2 id="scriptHeading">Build your script</h2><span class="step">01 / Script</span></div>
+                    <div class="source-tabs" role="tablist" aria-label="Script source">
+                        <button class="source-tab" id="manualTab" type="button" role="tab" aria-selected="true">Type script</button>
+                        <button class="source-tab" id="imageTab" type="button" role="tab" aria-selected="false">Add script images</button>
+                    </div>
+                    <div id="manualSource" role="tabpanel" aria-labelledby="manualTab">
+                        <label class="field-label" for="manualInput">Paste or type one line at a time</label>
+                        <textarea class="script-input" id="manualInput" placeholder="A quiet street at dawn.&#10;Did you hear that?&#10;Only the wind."></textarea>
+                        <div class="source-row"><p class="microcopy">Each new line becomes an editable script line. Assign roles below.</p><button class="button button-secondary" id="addManualButton" type="button">Add lines</button></div>
+                    </div>
+                    <div id="imageSource" role="tabpanel" aria-labelledby="imageTab" hidden>
+                        <div class="upload-zone"><strong>Choose several script pages</strong><p>Text is extracted in your browser, then you can edit and assign every line.</p><input id="imageInput" type="file" accept="image/*" multiple aria-label="Choose script images"></div>
+                        <div class="image-list" id="imageList" aria-live="polite"></div>
+                        <div class="source-row"><p class="microcopy" id="ocrStatus">JPG, PNG, and WebP images supported.</p><button class="button button-secondary" id="extractButton" type="button" disabled>Extract and add lines</button></div>
+                    </div>
+                    <div class="editor-head"><h3>Line-by-line assignments</h3><span class="line-count" id="lineCount">0 LINES</span></div>
+                    <div class="line-list" id="lineList" aria-live="polite"></div>
+                    <div class="role-actions"><span class="microcopy">Edit wording and speaker before rehearsal.</span><button class="button button-quiet" id="addLineButton" type="button">+ Add a line</button></div>
+                    <div class="start-row"><span class="setup-status" id="setupStatus" role="status"></span><button class="button start-button" id="startButton" type="button">Start rehearsal <span aria-hidden="true">→</span></button></div>
+                </section>
+
+                <aside class="panel" aria-labelledby="rolesHeading">
+                    <div class="panel-heading"><h2 id="rolesHeading">Roles & voices</h2><span class="step">02 / Cast</span></div>
+                    <div class="role-list" id="roleList"></div>
+                    <button class="button button-secondary" id="addRoleButton" type="button">+ Create a role</button>
+                    <div class="mic-block">
+                        <label class="field-label" for="micSelect">Your microphone</label>
+                        <select class="mic-select" id="micSelect" aria-label="Choose microphone"><option value="">System default microphone</option></select>
+                        <button class="button button-secondary permission-button" id="micAccessButton" type="button">Enable mic & refresh list</button>
+                        <p class="mic-note" id="micNote">Microphone selection works where your browser supports passing a chosen audio track to speech recognition. Otherwise, recognition uses your system default.</p>
+                    </div>
+                </aside>
+            </div>
+        </main>
+
+        <section class="rehearsal" id="rehearsalView" aria-label="Script rehearsal" hidden>
+            <header class="rehearsal-top"><div class="rehearsal-brand"><img src="media/MentalCuenotext.png" alt="">MentalCue / Rehearsal</div><button class="button button-secondary" id="exitButton" type="button">Back to setup</button></header>
+            <div class="rehearsal-main">
+                <div class="session-meta"><span id="sessionRole"></span><strong id="sessionStatus" aria-live="polite">Ready</strong></div>
+                <h1 class="session-title" id="sessionTitle">Your script</h1>
+                <div class="script-view" id="scriptView" aria-live="polite"></div>
+                <div class="live-panel"><div class="live-label"><span id="liveLabel">Speech match</span><span id="lineProgress">0 / 0</span></div><div class="live-text placeholder" id="liveText" aria-live="polite">Your spoken words will appear here.</div></div>
+                <div class="session-controls"><button class="button button-primary" id="playPauseButton" type="button">Pause</button><button class="button button-secondary" id="restartButton" type="button">Restart</button><button class="button button-secondary" id="hideLinesButton" type="button" aria-pressed="false">Hide my lines</button></div>
+                <p class="session-note" id="sessionNote">Other roles are read aloud. Say your line to continue.</p>
+            </div>
+        </section>
+
+        <script>
+            const lineList = document.getElementById('lineList');
+            const roleList = document.getElementById('roleList');
+            const setupStatus = document.getElementById('setupStatus');
+            const micSelect = document.getElementById('micSelect');
+            const micNote = document.getElementById('micNote');
+            const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = Recognition ? new Recognition() : null;
+            let roles = [
+                { id: 'role-1', name: 'Role 1', voice: '' },
+                { id: 'role-2', name: 'Role 2', voice: '' }
+            ];
+            let selectedRoleId = roles[0].id;
+            let lines = [];
+            let availableVoices = [];
+            let microphones = [];
+            let selectedStream = null;
+            let currentIndex = 0;
+            let isRunning = false;
+            let isListening = false;
+            let acceptedCurrentLine = false;
+            let hiddenOwnLines = false;
+            let liveTranscript = '';
+            let startFallbackNotice = false;
+
+            const selectedRole = () => roles.find(role => role.id === selectedRoleId) || roles[0];
+            const updateVoiceOptions = () => {
+                availableVoices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+                document.querySelectorAll('.voice-select').forEach(select => {
+                    const role = roles.find(item => item.id === select.dataset.roleId);
+                    const currentValue = role?.voice || '';
+                    select.replaceChildren(new Option('System default voice', ''));
+                    const voices = availableVoices.filter(voice => voice.lang.toLowerCase().startsWith('en'));
+                    (voices.length ? voices : availableVoices).forEach(voice => select.add(new Option(`${voice.name} (${voice.lang})`, voice.voiceURI)));
+                    select.value = currentValue;
+                });
+            };
+
+            const renderRoles = () => {
+                roleList.replaceChildren();
+                roles.forEach(role => {
+                    const row = document.createElement('div');
+                    row.className = 'role-row';
+                    row.innerHTML = `<div class="role-top"><input class="role-name" type="text" maxlength="32" aria-label="Role name"><label class="role-choice"><input type="radio" name="myRole" value=""><span>I play this</span></label><button class="role-delete" type="button" aria-label="Remove role">×</button></div><label class="voice-label">Text-to-speech voice</label><select class="voice-select" aria-label="Text-to-speech voice"></select>`;
+                    const nameInput = row.querySelector('.role-name');
+                    nameInput.value = role.name;
+                    nameInput.addEventListener('input', () => {
+                        role.name = nameInput.value;
+                        renderLines();
+                        if (document.getElementById('rehearsalView').hidden === false) renderScript();
+                    });
+                    const radio = row.querySelector('input[type="radio"]');
+                    radio.value = role.id;
+                    radio.checked = role.id === selectedRoleId;
+                    radio.addEventListener('change', () => { selectedRoleId = role.id; });
+                    row.querySelector('.role-delete').disabled = roles.length <= 1;
+                    row.querySelector('.role-delete').addEventListener('click', () => {
+                        if (roles.length <= 1) return;
+                        roles = roles.filter(item => item.id !== role.id);
+                        if (selectedRoleId === role.id) selectedRoleId = roles[0].id;
+                        lines.forEach(line => { if (line.roleId === role.id) line.roleId = roles[0].id; });
+                        renderRoles();
+                        renderLines();
+                    });
+                    const voiceSelect = row.querySelector('.voice-select');
+                    voiceSelect.dataset.roleId = role.id;
+                    voiceSelect.addEventListener('change', () => { role.voice = voiceSelect.value; });
+                    roleList.append(row);
+                });
+                updateVoiceOptions();
+                renderLines();
+            };
+
+            const renderLines = () => {
+                document.getElementById('lineCount').textContent = `${lines.length} LINE${lines.length === 1 ? '' : 'S'}`;
+                lineList.replaceChildren();
+                if (!lines.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty-lines';
+                    empty.textContent = 'Your script lines will appear here. Add text above or start with a blank line.';
+                    lineList.append(empty);
+                    return;
+                }
+                lines.forEach((line, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'line-row';
+                    const number = document.createElement('span');
+                    number.className = 'line-number';
+                    number.textContent = String(index + 1).padStart(2, '0');
+                    const text = document.createElement('input');
+                    text.className = 'line-text';
+                    text.type = 'text';
+                    text.value = line.text;
+                    text.setAttribute('aria-label', `Line ${index + 1} text`);
+                    text.addEventListener('input', () => { line.text = text.value; });
+                    const roleSelect = document.createElement('select');
+                    roleSelect.className = 'role-select';
+                    roleSelect.setAttribute('aria-label', `Line ${index + 1} role`);
+                    roles.forEach(role => roleSelect.add(new Option(role.name || 'Unnamed role', role.id)));
+                    roleSelect.value = line.roleId;
+                    roleSelect.addEventListener('change', () => { line.roleId = roleSelect.value; });
+                    const remove = document.createElement('button');
+                    remove.className = 'remove-line';
+                    remove.type = 'button';
+                    remove.setAttribute('aria-label', `Remove line ${index + 1}`);
+                    remove.textContent = '×';
+                    remove.addEventListener('click', () => { lines.splice(index, 1); renderLines(); });
+                    row.append(number, text, roleSelect, remove);
+                    lineList.append(row);
+                });
+            };
+
+            const addTextLines = text => {
+                const added = text.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
+                lines.push(...added.map(value => ({ id: crypto.randomUUID(), text: value, roleId: selectedRoleId })));
+                renderLines();
+            };
+
+            document.getElementById('manualTab').addEventListener('click', () => {
+                document.getElementById('manualTab').setAttribute('aria-selected', 'true');
+                document.getElementById('imageTab').setAttribute('aria-selected', 'false');
+                document.getElementById('manualSource').hidden = false;
+                document.getElementById('imageSource').hidden = true;
+            });
+            document.getElementById('imageTab').addEventListener('click', () => {
+                document.getElementById('manualTab').setAttribute('aria-selected', 'false');
+                document.getElementById('imageTab').setAttribute('aria-selected', 'true');
+                document.getElementById('manualSource').hidden = true;
+                document.getElementById('imageSource').hidden = false;
+            });
+            document.getElementById('addManualButton').addEventListener('click', () => {
+                const input = document.getElementById('manualInput');
+                if (!input.value.trim()) { setupStatus.textContent = 'Add some script text first.'; input.focus(); return; }
+                addTextLines(input.value);
+                input.value = '';
+                setupStatus.textContent = '';
+            });
+            document.getElementById('addLineButton').addEventListener('click', () => {
+                lines.push({ id: crypto.randomUUID(), text: '', roleId: selectedRoleId });
+                renderLines();
+                lineList.querySelector('.line-row:last-child .line-text')?.focus();
+            });
+            document.getElementById('addRoleButton').addEventListener('click', () => {
+                const number = roles.length + 1;
+                const role = { id: crypto.randomUUID(), name: `Role ${number}`, voice: '' };
+                roles.push(role);
+                renderRoles();
+                roleList.querySelector('.role-row:last-child .role-name')?.focus();
+            });
+
+            const imageInput = document.getElementById('imageInput');
+            const extractButton = document.getElementById('extractButton');
+            imageInput.addEventListener('change', () => {
+                const files = [...imageInput.files];
+                document.getElementById('imageList').replaceChildren(...files.map(file => {
+                    const item = document.createElement('span');
+                    item.textContent = file.name;
+                    return item;
+                }));
+                extractButton.disabled = files.length === 0;
+                document.getElementById('ocrStatus').textContent = files.length ? `${files.length} image${files.length === 1 ? '' : 's'} ready to extract.` : 'JPG, PNG, and WebP images supported.';
+            });
+            extractButton.addEventListener('click', async () => {
+                const files = [...imageInput.files];
+                if (!files.length || !window.Tesseract) { document.getElementById('ocrStatus').textContent = 'OCR could not load. Check your connection and try again.'; return; }
+                extractButton.disabled = true;
+                const recognized = [];
+                try {
+                    for (let index = 0; index < files.length; index++) {
+                        document.getElementById('ocrStatus').textContent = `Reading image ${index + 1} of ${files.length}...`;
+                        const result = await Tesseract.recognize(files[index], 'eng', { logger: message => {
+                            if (message.status === 'recognizing text') document.getElementById('ocrStatus').textContent = `Image ${index + 1} of ${files.length}: ${Math.round(message.progress * 100)}%`;
+                        } });
+                        recognized.push(result.data.text);
+                    }
+                    addTextLines(recognized.join('\n'));
+                    document.getElementById('ocrStatus').textContent = `Added ${recognized.join('\n').split(/\r?\n/).filter(value => value.trim()).length} lines. Review the text and assignments below.`;
+                    setupStatus.textContent = '';
+                } catch (error) {
+                    document.getElementById('ocrStatus').textContent = `Could not read those images: ${error.message}`;
+                } finally {
+                    extractButton.disabled = false;
+                }
+            });
+
+            const refreshMicrophones = async () => {
+                if (!navigator.mediaDevices?.enumerateDevices) return;
+                microphones = (await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'audioinput');
+                const previous = micSelect.value;
+                micSelect.replaceChildren(new Option('System default microphone', ''));
+                microphones.forEach((device, index) => micSelect.add(new Option(device.label || `Microphone ${index + 1}`, device.deviceId)));
+                if (microphones.some(device => device.deviceId === previous)) micSelect.value = previous;
+            };
+            document.getElementById('micAccessButton').addEventListener('click', async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    stream.getTracks().forEach(track => track.stop());
+                    await refreshMicrophones();
+                    micNote.textContent = 'Microphone access is ready. Your selected device will be used when supported by browser speech recognition.';
+                } catch (error) {
+                    micNote.textContent = error.name === 'NotAllowedError' ? 'Microphone access was denied. Allow it in your browser settings to rehearse.' : 'Microphone access needs localhost or HTTPS, and a connected microphone.';
+                }
+            });
+            navigator.mediaDevices?.addEventListener('devicechange', refreshMicrophones);
+            refreshMicrophones();
+
+            const renderScript = () => {
+                const scriptView = document.getElementById('scriptView');
+                scriptView.replaceChildren();
+                lines.forEach((line, index) => {
+                    const row = document.createElement('div');
+                    const role = roles.find(item => item.id === line.roleId);
+                    const mine = line.roleId === selectedRoleId;
+                    row.className = `script-line${mine ? ' mine' : ''}${index === currentIndex ? ' active' : ''}${index < currentIndex ? ' done' : ''}`;
+                    row.dataset.lineIndex = String(index);
+                    const speaker = document.createElement('span');
+                    speaker.className = 'speaker';
+                    speaker.textContent = mine ? `You / ${role?.name || 'Role'}` : role?.name || 'Role';
+                    const copy = document.createElement('span');
+                    copy.className = 'line-copy';
+                    copy.textContent = line.text;
+                    row.append(speaker, copy);
+                    scriptView.append(row);
+                });
+                scriptView.classList.toggle('hide-own-lines', hiddenOwnLines);
+                document.getElementById('lineProgress').textContent = `${Math.min(currentIndex + 1, lines.length)} / ${lines.length}`;
+                scriptView.querySelector('.active')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            };
+
+            const setSessionStatus = (status, message = '') => {
+                document.getElementById('sessionStatus').textContent = status;
+                if (message) document.getElementById('sessionNote').textContent = message;
+            };
+            const setLiveText = (text, placeholder = false) => {
+                const liveText = document.getElementById('liveText');
+                liveText.textContent = text;
+                liveText.classList.toggle('placeholder', placeholder);
+            };
+            const normalizeSpeech = text => text.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+            const releaseStream = () => {
+                if (selectedStream) selectedStream.getTracks().forEach(track => track.stop());
+                selectedStream = null;
+            };
+            const stopListening = abort => {
+                if (recognition && isListening) {
+                    try { abort ? recognition.abort() : recognition.stop(); } catch (error) { /* Recognition may already have stopped. */ }
+                }
+                isListening = false;
+            };
+            const beginListening = () => {
+                if (!isRunning || !recognition || !selectedStream) return;
+                liveTranscript = '';
+                setLiveText('Listening for your line...', true);
+                document.getElementById('liveLabel').textContent = 'Your turn / speech match';
+                setSessionStatus('Listening', 'Say the line shown above. The next cue starts when your words match.');
+                try {
+                    const audioTrack = selectedStream.getAudioTracks()[0];
+                    if (audioTrack) recognition.start(audioTrack);
+                    else recognition.start();
+                } catch (error) {
+                    try {
+                        recognition.start();
+                        if (!startFallbackNotice) {
+                            micNote.textContent = 'This browser cannot route a selected microphone into speech recognition, so the system default is in use.';
+                            document.getElementById('sessionNote').textContent = 'Your browser is using its system default microphone for speech recognition.';
+                            startFallbackNotice = true;
+                        }
+                    } catch (startError) {
+                        setSessionStatus('Mic unavailable', 'Check microphone permission and use Chrome or Edge over localhost or HTTPS.');
+                        isRunning = false;
+                        document.getElementById('playPauseButton').textContent = 'Resume';
+                    }
+                }
+            };
+
+            if (recognition) {
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.maxAlternatives = 1;
+                recognition.lang = navigator.language || 'en-US';
+                recognition.onstart = () => { isListening = true; };
+                recognition.onresult = event => {
+                    let transcript = '';
+                    for (let index = 0; index < event.results.length; index++) transcript += `${event.results[index][0].transcript} `;
+                    liveTranscript = transcript.trim();
+                    setLiveText(liveTranscript || 'Listening for your line...', !liveTranscript);
+                    const expected = normalizeSpeech(lines[currentIndex]?.text || '');
+                    const heard = normalizeSpeech(liveTranscript);
+                    if (expected && heard.includes(expected) && !acceptedCurrentLine) {
+                        acceptedCurrentLine = true;
+                        isListening = false;
+                        try { recognition.stop(); } catch (error) { /* The match can end recognition before stop is called. */ }
+                        setLiveText(`Matched: ${lines[currentIndex].text}`);
+                        setSessionStatus('Matched', 'Nice. Getting the next cue ready.');
+                        window.setTimeout(() => {
+                            if (!isRunning) return;
+                            currentIndex++;
+                            playCurrentLine();
+                        }, 550);
+                    }
+                };
+                recognition.onerror = event => {
+                    if (event.error === 'no-speech' || event.error === 'aborted') return;
+                    if (event.error === 'not-allowed' || event.error === 'service-not-allowed' || event.error === 'network') {
+                        isRunning = false;
+                        isListening = false;
+                          setSessionStatus(event.error === 'not-allowed' ? 'Permission needed' : 'Speech service unavailable', event.error === 'not-allowed' ? 'Allow microphone and speech recognition access, then press Resume.' : 'The browser speech service could not connect. Use Chrome or Edge over localhost or HTTPS, check your connection, then press Resume.');
+                        document.getElementById('playPauseButton').textContent = 'Resume';
+                    } else if (event.error === 'audio-capture') {
+                        isRunning = false;
+                        isListening = false;
+                        setSessionStatus('No microphone', 'Connect or select a microphone, then press Resume.');
+                        document.getElementById('playPauseButton').textContent = 'Resume';
+                    }
+                };
+                recognition.onend = () => {
+                    isListening = false;
+                    if (isRunning && !acceptedCurrentLine && lines[currentIndex]?.roleId === selectedRoleId) window.setTimeout(beginListening, 250);
+                };
+            }
+
+            const playCurrentLine = () => {
+                if (!isRunning) return;
+                if (currentIndex >= lines.length) {
+                    isRunning = false;
+                    stopListening(true);
+                    releaseStream();
+                    setSessionStatus('Complete', 'That is the whole script. Restart for another run or return to setup.');
+                    document.getElementById('playPauseButton').textContent = 'Play again';
+                    document.getElementById('liveLabel').textContent = 'Rehearsal complete';
+                    setLiveText('You made it through every line.');
+                    renderScript();
+                    return;
+                }
+                acceptedCurrentLine = false;
+                renderScript();
+                const line = lines[currentIndex];
+                if (line.roleId === selectedRoleId) {
+                    beginListening();
+                    return;
+                }
+                stopListening(true);
+                const role = roles.find(item => item.id === line.roleId);
+                document.getElementById('liveLabel').textContent = 'Listening for your next cue';
+                setLiveText(`Up next: ${role?.name || 'Other role'}`);
+                setSessionStatus('Speaking', `${role?.name || 'Other role'} is reading their line.`);
+                const utterance = new SpeechSynthesisUtterance(line.text);
+                const voice = availableVoices.find(item => item.voiceURI === role?.voice);
+                if (voice) utterance.voice = voice;
+                utterance.onend = () => {
+                    if (!isRunning) return;
+                    currentIndex++;
+                    playCurrentLine();
+                };
+                utterance.onerror = () => {
+                    if (!isRunning) return;
+                    setSessionStatus('Voice unavailable', 'Your browser could not play this line. Press Resume to try again.');
+                    isRunning = false;
+                    document.getElementById('playPauseButton').textContent = 'Resume';
+                };
+                speechSynthesis.speak(utterance);
+            };
+
+            const launchRehearsal = async () => {
+                lines = lines.map(line => ({ ...line, text: line.text.trim() })).filter(line => line.text);
+                renderLines();
+                if (!lines.length) { setupStatus.textContent = 'Add at least one script line to get started.'; return; }
+                if (!Recognition) { setupStatus.textContent = 'Live speech matching needs Chrome or Edge speech recognition.'; return; }
+                if (!window.speechSynthesis) { setupStatus.textContent = 'Text-to-speech is unavailable in this browser.'; return; }
+                setupStatus.textContent = '';
+                try {
+                    const deviceId = micSelect.value;
+                    selectedStream = await navigator.mediaDevices.getUserMedia({ audio: deviceId ? { deviceId: { exact: deviceId } } : true });
+                    await refreshMicrophones();
+                } catch (error) {
+                    setupStatus.textContent = error.name === 'NotAllowedError' ? 'Allow microphone access to start rehearsal.' : 'Microphone unavailable. Use localhost or HTTPS and try again.';
+                    return;
+                }
+                currentIndex = 0;
+                startFallbackNotice = false;
+                isRunning = false;
+                hiddenOwnLines = false;
+                document.getElementById('hideLinesButton').setAttribute('aria-pressed', 'false');
+                document.getElementById('hideLinesButton').textContent = 'Hide my lines';
+                document.getElementById('sessionRole').textContent = `Your role / ${selectedRole()?.name || 'Role'}`;
+                document.getElementById('sessionTitle').textContent = `${lines.length} lines to rehearse`;
+                document.getElementById('playPauseButton').textContent = 'Play';
+                document.getElementById('rehearsalView').hidden = false;
+                document.getElementById('rehearsalView').scrollTop = 0;
+                document.getElementById('liveLabel').textContent = 'Ready when you are';
+                setLiveText('Press Play to begin your rehearsal.', true);
+                setSessionStatus('Ready', 'Other roles will be read aloud. Your line waits for a speech match.');
+                renderScript();
+            };
+
+            document.getElementById('startButton').addEventListener('click', launchRehearsal);
+            document.getElementById('playPauseButton').addEventListener('click', () => {
+                if (isRunning) {
+                    isRunning = false;
+                    speechSynthesis.cancel();
+                    stopListening(true);
+                    setSessionStatus('Paused', 'Resume when you are ready.');
+                    document.getElementById('playPauseButton').textContent = 'Resume';
+                } else if (currentIndex >= lines.length) {
+                    currentIndex = 0;
+                    isRunning = true;
+                    document.getElementById('playPauseButton').textContent = 'Pause';
+                    playCurrentLine();
+                } else {
+                    isRunning = true;
+                    document.getElementById('playPauseButton').textContent = 'Pause';
+                    playCurrentLine();
+                }
+            });
+            document.getElementById('restartButton').addEventListener('click', () => {
+                speechSynthesis.cancel();
+                stopListening(true);
+                currentIndex = 0;
+                isRunning = true;
+                document.getElementById('playPauseButton').textContent = 'Pause';
+                setLiveText('Your spoken words will appear here.', true);
+                playCurrentLine();
+            });
+            document.getElementById('hideLinesButton').addEventListener('click', event => {
+                hiddenOwnLines = !hiddenOwnLines;
+                event.currentTarget.setAttribute('aria-pressed', String(hiddenOwnLines));
+                event.currentTarget.textContent = hiddenOwnLines ? 'Show my lines' : 'Hide my lines';
+                document.getElementById('scriptView').classList.toggle('hide-own-lines', hiddenOwnLines);
+            });
+            document.getElementById('exitButton').addEventListener('click', () => {
+                isRunning = false;
+                speechSynthesis.cancel();
+                stopListening(true);
+                releaseStream();
+                document.getElementById('rehearsalView').hidden = true;
+                setupStatus.textContent = '';
+            });
+
+            if (recognition) recognition.lang = navigator.language || 'en-US';
+            if (window.speechSynthesis) {
+                updateVoiceOptions();
+                speechSynthesis.addEventListener('voiceschanged', updateVoiceOptions);
+            }
+            renderRoles();
+        </script>
+    </body>
+    </html>
