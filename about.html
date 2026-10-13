@@ -3,11 +3,32 @@
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title> MentalCue - Home</title>
+            <title> MentalCue - About Us</title>
             <meta name="author" content="Gabriel Pires Simao">
             <link rel="stylesheet" href="style.css">
             <link rel="icon" type="image/png" href="media/MentalCuenotext.png">
             <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+            <style>
+                #creator{
+                    width: 100%;
+                    font-size: 1.2rem;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                }
+                #creator img{
+                    width: 200px;
+                    height: auto;
+                    left: 5%;
+                    border-radius: 15px;
+                }
+                figure figcaption{
+                    text-align: center;
+                    font-size: 1rem;
+                    max-width: 200px;
+                }
+            </style>
         </head>
         <body>
             <nav>
@@ -29,6 +50,12 @@
             <br><br>
                 <div id="textbox1">
                     <p>This website, MentalCue, is designed to provide users with a way to memorize lines for free! Believe it or not, this entire website was built by a single person, me (With assistance from GitHub's Copilot and Claude for the Javascript). As an actor myself (in jr musicals...), I always wanted a free way to be able to memorize my lines easily. And now, I offer this to you, user. Enjoy your experience!</p>
+                    <div id="creator">
+                        <figure>
+                            <img src="media/MyPhoto.png" alt="Photo of Gabriel Pires Simao, creator of MentalCue">
+                            <figcaption>Photo of Gabriel Pires Simao, creator of MentalCue</figcaption>
+                        </figure>
+                    </div>
                 </div>
         </body>
     </html>
